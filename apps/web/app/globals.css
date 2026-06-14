@@ -1,50 +1,168 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@import "tailwindcss";
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Echoes design tokens — dark navy palette sampled from the CopyMind brief.
+   Tailwind v4: each --color-* token becomes a utility (bg-*, text-*, border-*).
+   ────────────────────────────────────────────────────────────────────────── */
+@theme {
+  --color-background: #070b14;
+  --color-surface: #0c1322;
+  --color-surface-2: #111a2e;
+  --color-elevated: #16203a;
+
+  --color-foreground: #e8ecf4;
+  --color-muted: #8b94a7;
+  --color-faint: #5b6478;
+
+  --color-border: #1c2740;
+  --color-border-strong: #2a3550;
+
+  --color-primary: #3b82f6;
+  --color-primary-foreground: #f8fafc;
+  --color-accent: #8b5cf6;
+
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #38bdf8;
+
+  --color-ring: #3b82f6;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    border-color: var(--color-border);
   }
-}
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-}
-
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-.imgDark {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
   html {
     color-scheme: dark;
   }
 
-  .imgLight {
-    display: none;
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
-  .imgDark {
-    display: unset;
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-primary) 35%, transparent);
+  }
+
+  /* Custom scrollbar to match the dark theme */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+}
+
+@layer utilities {
+  /* Brand gradient text used in hero / headings */
+  .text-gradient {
+    background-image: linear-gradient(
+      100deg,
+      #ffffff 0%,
+      #93c5fd 45%,
+      #a78bfa 100%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+  }
+
+  /* Faint dotted grid + radial glow for hero backgrounds */
+  .bg-grid {
+    background-image:
+      radial-gradient(
+        circle at 50% 0%,
+        color-mix(in srgb, var(--color-primary) 18%, transparent),
+        transparent 55%
+      ),
+      linear-gradient(var(--color-border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--color-border) 1px, transparent 1px);
+    background-size:
+      100% 100%,
+      48px 48px,
+      48px 48px;
+    background-position:
+      center top,
+      center,
+      center;
+  }
+
+  .glass {
+    background-color: color-mix(in srgb, var(--color-surface) 75%, transparent);
+    backdrop-filter: blur(12px);
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--color-foreground) 6%, transparent),
+      transparent
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  .toast-root[data-state="open"] {
+    animation: toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .toast-root[data-state="closed"] {
+    animation: toast-out 160ms ease-in forwards;
+  }
+  .toast-root[data-swipe="move"] {
+    transform: translateX(var(--radix-toast-swipe-move-x));
+  }
+  .toast-root[data-swipe="end"] {
+    animation: toast-out 160ms ease-in forwards;
+  }
+
+  @keyframes toast-in {
+    from {
+      transform: translateX(110%);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  @keyframes toast-out {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(110%);
+      opacity: 0;
+    }
   }
 }

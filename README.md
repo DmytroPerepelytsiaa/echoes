@@ -1,159 +1,212 @@
-# Turborepo starter
+# Echoes — AI insights for your decisions
 
-This Turborepo starter is maintained by the Turborepo core team.
+Echoes is a small full‑stack app where you record a complex life or work
+decision you've **already made**, and an LLM analyses it to surface deeper
+insight into its quality: the **decision category**, the **cognitive biases**
+likely at play, and the **alternatives you may have missed**.
 
-## Using this example
+> Built as a test assignment. Stack: **Next.js 16 (App Router) · TypeScript ·
+> Tailwind v4 · Radix UI · Postgres (Neon) · Drizzle ORM · Zod · BetterAuth
+> (JWT) · Vercel AI SDK + Groq**.
 
-Run the following command:
+- **Live demo:** _add your Vercel URL here_
+- **Repository:** _this repo_
 
-```sh
-npx create-turbo@latest
+---
+
+## Features
+
+**Core**
+
+- 🔐 **Real authentication** — email + password via **BetterAuth**, with the
+  JWT plugin (JWKS stored in the database) and session cookies. Routes are
+  guarded both by a Next.js proxy (edge cookie check) and server‑side session
+  validation.
+- 📝 **Record a decision** — a form for the *situation*, the *decision made*,
+  and optional *reasoning*. On submit the record is saved and analysis is
+  kicked off in the background.
+- 🤖 **LLM analysis** — the decision is sent to Groq through the Vercel AI SDK.
+  The model returns a **structured** result (validated with Zod): category,
+  cognitive biases (with severity + rationale), missed alternatives, strengths,
+  a quality score and a complexity score.
+- 🗂️ **History** — every decision with its original text, generated analysis
+  and processing status (`Queued → Analyzing → Ready / Failed`). The list
+  **polls live** while anything is still processing.
+- 🎛️ **Robust UX states** — loading skeletons, empty states, inline errors and
+  one‑click retry everywhere it matters; clear messaging while analysis is
+  pending or after a failure.
+
+**Bonus (all included)**
+
+- 📊 **Dashboard** with custom visualisations — decisions per category, most
+  frequent biases, a 14‑day activity timeline and KPI cards (avg quality /
+  complexity).
+- 🔁 **Re‑analysis** — re‑run the LLM on any decision (also used to retry
+  failures).
+- 🔎 **Filters** — by category, bias type and status.
+- ↕️ **Sorting** — by creation time or complexity.
+- 🌙 **Dark theme** — the whole app uses the dark navy palette from the brief.
+
+---
+
+## How it works
+
+### Background analysis + status lifecycle
+
+Creating a decision returns immediately with status `pending`. The LLM call runs
+**after the response is sent** using Next.js [`after()`](https://nextjs.org/docs/app/api-reference/functions/after),
+which keeps the same serverless invocation alive on Vercel — no separate queue
+needed. A shared `runAnalysis(id)` owns the full lifecycle:
+
+```
+pending ──▶ processing ──▶ completed   (analysis persisted)
+                       └──▶ failed      (error message persisted, retryable)
 ```
 
-## What's inside?
+The client uses **TanStack Query** with a conditional `refetchInterval` that
+polls only while a record is `pending`/`processing`, so the UI updates itself
+without manual refreshes. The same `runAnalysis` powers the re‑analyze / retry
+endpoint.
 
-This Turborepo includes the following packages/apps:
+### Predictable, chartable output
 
-### Apps and Packages
+A fixed [taxonomy](apps/web/lib/taxonomy.ts) of categories and well‑known
+cognitive biases is shared by the prompt, the database and the UI. The model is
+asked to pick from these lists, which keeps the output consistent enough to
+filter and aggregate reliably. Category, complexity and bias types are
+denormalised onto columns for fast filtering/sorting.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+### Validation everywhere
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+A single set of [Zod schemas](apps/web/lib/validations.ts) validates the create
+form (client + server), the list query params, **and** the LLM's structured
+output (via `generateObject`).
 
-### Utilities
+---
 
-This Turborepo has some additional tools already setup for you:
+## Tech stack
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+| Concern        | Choice                                                        |
+| -------------- | ------------------------------------------------------------- |
+| Framework      | Next.js 16 (App Router, serverless route handlers), React 19  |
+| Language       | TypeScript                                                    |
+| Styling        | Tailwind CSS v4 + design tokens                               |
+| UI primitives  | Radix UI (Dialog, Select, Dropdown, Tooltip, Toast, …)        |
+| Database       | Postgres on **Neon** (serverless HTTP driver)                 |
+| ORM            | Drizzle ORM + drizzle‑kit                                     |
+| Auth           | BetterAuth (email/password, JWT plugin, Drizzle adapter)      |
+| Validation     | Zod                                                           |
+| AI             | Vercel AI SDK (`ai`) + `@ai-sdk/groq`, `generateText` + `Output.object` |
+| Data fetching  | TanStack Query                                                |
+| Forms          | react‑hook‑form + Zod resolver                                |
+| Monorepo       | Turborepo + pnpm                                              |
 
-### Build
+---
 
-To build all apps and packages, run the following command:
+## Local development
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+### Prerequisites
 
-```sh
-cd my-turborepo
-turbo build
+- Node.js ≥ 18 and **pnpm** (`npm i -g pnpm`)
+- A free **Neon** Postgres database — <https://neon.tech>
+- A free **Groq** API key — <https://console.groq.com/keys> (no credit card)
+
+### 1. Install
+
+```bash
+pnpm install
 ```
 
-Without global `turbo`, use your package manager:
+### 2. Configure environment
 
-```sh
-cd my-turborepo
-npx turbo build
-pnpm dlx turbo build
-pnpm exec turbo build
+```bash
+cp apps/web/.env.example apps/web/.env.local
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+Fill in `apps/web/.env.local`:
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+| Variable             | How to get it                                                            |
+| -------------------- | ------------------------------------------------------------------------ |
+| `DATABASE_URL`       | Neon → your project → **Pooled** connection string (`...-pooler...`).     |
+| `BETTER_AUTH_SECRET` | Any 32+ char secret. Generate with `openssl rand -base64 32`.            |
+| `BETTER_AUTH_URL`    | `http://localhost:3000` locally.                                         |
+| `NEXT_PUBLIC_APP_URL`| `http://localhost:3000` locally.                                        |
+| `GROQ_API_KEY`       | console.groq.com/keys → create key.                                      |
+| `GROQ_MODEL`         | optional, defaults to `openai/gpt-oss-120b`.                            |
 
-```sh
-turbo build --filter=docs
+### 3. Create the database schema
+
+```bash
+pnpm --filter web db:push      # or: db:generate to emit SQL migrations
 ```
 
-Without global `turbo`:
+### 4. Run
 
-```sh
-npx turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
+```bash
+pnpm dev
 ```
 
-### Develop
+Open <http://localhost:3000>, sign up, and record your first decision.
 
-To develop all apps and packages, run the following command:
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
+## Scripts
 
-```sh
-cd my-turborepo
-turbo dev
+Run from the repo root (Turborepo) or scope with `--filter web`:
+
+| Command                          | Description                              |
+| -------------------------------- | ---------------------------------------- |
+| `pnpm dev`                       | Start the dev server                     |
+| `pnpm build`                     | Production build                         |
+| `pnpm lint`                      | ESLint (zero‑warning policy)             |
+| `pnpm check-types`               | `next typegen` + `tsc --noEmit`          |
+| `pnpm --filter web db:push`      | Push the Drizzle schema to Neon          |
+| `pnpm --filter web db:generate`  | Generate SQL migrations                  |
+| `pnpm --filter web db:studio`    | Open Drizzle Studio                      |
+
+---
+
+## Deployment (Vercel)
+
+1. Import the repo into Vercel and set the **root directory** to `apps/web`.
+2. Add the env vars from the table above (use your Vercel URL for
+   `BETTER_AUTH_URL` / `NEXT_PUBLIC_APP_URL`).
+3. Run `pnpm --filter web db:push` once against your Neon database (locally or
+   in a one‑off job) to create the schema.
+4. Deploy. The Neon serverless driver + `after()` work natively on Vercel
+   functions.
+
+---
+
+## Project structure
+
+```
+apps/web/
+├─ app/
+│  ├─ (auth)/login, signup        # auth pages
+│  ├─ (app)/dashboard             # KPIs + charts
+│  ├─ (app)/decisions             # history (filters/sort/polling)
+│  ├─ (app)/decisions/new         # create form
+│  ├─ (app)/decisions/[id]        # detail + analysis + re-analyze
+│  ├─ api/auth/[...all]           # BetterAuth handler
+│  ├─ api/decisions[/...]         # CRUD + analyze endpoints
+│  └─ api/stats                   # dashboard aggregation
+├─ components/{ui,decisions,dashboard,site,auth}
+├─ db/                            # Drizzle schema, client, migrations
+├─ lib/                           # auth, session, analysis, validations, taxonomy
+└─ proxy.ts                       # route protection (Next 16 proxy convention)
 ```
 
-Without global `turbo`, use your package manager:
+---
 
-```sh
-cd my-turborepo
-npx turbo dev
-pnpm exec turbo dev
-pnpm exec turbo dev
-```
+## Notes & trade‑offs
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-pnpm exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-pnpm exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- **Groq free tier** has generous rate limits — plenty for a demo. The default
+  `openai/gpt-oss-120b` supports strict structured outputs; the app also falls
+  back to best-effort `json_object` mode automatically for models that don't,
+  so you can swap `GROQ_MODEL` freely (e.g. `llama-3.3-70b-versatile`).
+- `after()` runs analysis in the same function invocation; for very large scale
+  you'd move to a durable queue (e.g. Inngest / QStash), but the `runAnalysis`
+  function is already decoupled and queue‑ready.
+- The proxy does an optimistic cookie check; authoritative session checks happen
+  in server components and every route handler.
