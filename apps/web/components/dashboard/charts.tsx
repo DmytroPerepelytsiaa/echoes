@@ -102,13 +102,13 @@ export function ActivityTimeline({
         <CardTitle className="text-base">Activity — last 14 days</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex h-32 items-end gap-1.5">
+        <div className="flex h-32 items-stretch gap-1.5">
           {data.map((d) => {
-            const heightPct = d.count === 0 ? 4 : (d.count / max) * 100;
+            const heightPct = d.count === 0 ? 4 : Math.max(8, (d.count / max) * 100);
             return (
               <div
                 key={d.date}
-                className="group relative flex flex-1 flex-col items-center justify-end"
+                className="group relative flex flex-1 flex-col justify-end"
                 title={`${d.date}: ${d.count}`}
               >
                 <div
