@@ -9,7 +9,6 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-/** GET /api/decisions/:id — fetch one decision owned by the current user. */
 export async function GET(_request: NextRequest, { params }: Params) {
   const userId = await getUserId();
   if (!userId) return unauthorized();
@@ -25,7 +24,6 @@ export async function GET(_request: NextRequest, { params }: Params) {
   return NextResponse.json({ decision: row });
 }
 
-/** DELETE /api/decisions/:id — remove a decision. */
 export async function DELETE(_request: NextRequest, { params }: Params) {
   const userId = await getUserId();
   if (!userId) return unauthorized();

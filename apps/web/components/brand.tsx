@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/** Echoes wordmark with a concentric "echo" mark. */
 export function Logo({
   className,
   showText = true,

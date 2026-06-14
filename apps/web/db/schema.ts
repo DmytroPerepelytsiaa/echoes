@@ -10,11 +10,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { AnalysisResult } from "@/lib/validations";
 
-/* ──────────────────────────────────────────────────────────────────────────
-   BetterAuth tables. Field (JS) names match BetterAuth's expected model
-   fields; column names are snake_case. Mirrors `@better-auth/cli generate`.
-   ────────────────────────────────────────────────────────────────────────── */
-
+// BetterAuth tables — JS field names match BetterAuth's expected model fields.
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
@@ -65,17 +61,13 @@ export const verification = pgTable("verification", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-/** JWKS keypairs for the BetterAuth `jwt()` plugin (JWT issuance). */
+// Keypairs for the BetterAuth jwt() plugin.
 export const jwks = pgTable("jwks", {
   id: text("id").primaryKey(),
   publicKey: text("public_key").notNull(),
   privateKey: text("private_key").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
-
-/* ──────────────────────────────────────────────────────────────────────────
-   Application tables
-   ────────────────────────────────────────────────────────────────────────── */
 
 export const decisionStatus = pgEnum("decision_status", [
   "pending",
@@ -97,7 +89,7 @@ export const decisions = pgTable("decisions", {
   status: decisionStatus("status").default("pending").notNull(),
   analysis: jsonb("analysis").$type<AnalysisResult>(),
 
-  // Denormalised columns for fast filtering / sorting / aggregation.
+  // Denormalised from `analysis` for fast filtering / sorting / aggregation.
   category: text("category"),
   complexity: integer("complexity"),
   biasTypes: text("bias_types").array(),

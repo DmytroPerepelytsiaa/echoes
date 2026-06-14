@@ -80,7 +80,7 @@ denormalised onto columns for fast filtering/sorting.
 
 A single set of [Zod schemas](apps/web/lib/validations.ts) validates the create
 form (client + server), the list query params, **and** the LLM's structured
-output (via `generateObject`).
+output (via `generateText` + `Output.object`).
 
 ---
 
@@ -100,6 +100,37 @@ output (via `generateObject`).
 | Data fetching  | TanStack Query                                                |
 | Forms          | react‑hook‑form + Zod resolver                                |
 | Monorepo       | Turborepo + pnpm                                              |
+
+---
+
+## Why these choices
+
+The stack was largely set by the brief; these notes explain the decisions that
+were left open and why I made them the way I did.
+
+- **Drizzle (over Prisma)** — lightweight, no separate engine/codegen step, and a
+  first‑class fit for Neon's serverless HTTP driver and BetterAuth's adapter.
+- **`after()` for background analysis (over a queue)** — the brief asks for
+  *background* processing with visible status. `after()` runs the LLM call after
+  the response is sent, in the same serverless invocation, so the create request
+  returns instantly with a `pending` record and zero extra infrastructure. The
+  work lives in a standalone `runAnalysis(id)` that's already queue‑ready.
+- **Polling (over WebSockets/SSE)** — TanStack Query already manages the data; a
+  conditional `refetchInterval` (only while something is in flight) gives live
+  status with a few lines and no socket infrastructure.
+- **Fixed taxonomy + structured output** — constraining the model to known
+  categories/biases (via the Zod schema) is what makes filtering and the
+  dashboard charts reliable instead of free‑text noise.
+- **`gpt-oss-120b` as the default model** — it's on Groq's free tier and supports
+  strict `json_schema` structured outputs, which gives the most reliable parse.
+  The app auto‑falls back to `json_object` mode for models that don't, so the
+  model is freely swappable via `GROQ_MODEL`.
+- **Custom CSS/SVG charts (over a chart library)** — avoids a heavy dependency and
+  React‑19 compatibility risk, and keeps the dark theme fully under control for
+  what are simple bar/timeline visuals.
+- **Hand‑written Drizzle auth schema** — mirrors what `@better-auth/cli generate`
+  produces, but committed and reviewable, so the schema and migrations are
+  explicit in the repo.
 
 ---
 
@@ -199,14 +230,38 @@ apps/web/
 
 ---
 
-## Notes & trade‑offs
+## Trade‑offs & time constraints
 
-- **Groq free tier** has generous rate limits — plenty for a demo. The default
-  `openai/gpt-oss-120b` supports strict structured outputs; the app also falls
-  back to best-effort `json_object` mode automatically for models that don't,
-  so you can swap `GROQ_MODEL` freely (e.g. `llama-3.3-70b-versatile`).
-- `after()` runs analysis in the same function invocation; for very large scale
-  you'd move to a durable queue (e.g. Inngest / QStash), but the `runAnalysis`
-  function is already decoupled and queue‑ready.
-- The proxy does an optimistic cookie check; authoritative session checks happen
-  in server components and every route handler.
+This was built under a **2‑day limit**, so I deliberately made some pragmatic
+choices that are perfectly fine for a test task / demo but that I would **not**
+ship to production as‑is. Calling them out explicitly:
+
+- **Background jobs via `after()`** — fine here, but it's bound to the request's
+  function lifetime and has no retries/backoff/observability. *Prod:* a durable
+  queue (Inngest / QStash / a worker) with retry, dead‑letter and metrics.
+  `runAnalysis(id)` is already isolated to make that swap easy.
+- **Status via client polling** — simple but chatty (fixed 2–2.5s interval).
+  *Prod:* SSE/WebSockets (or push) and exponential backoff.
+- **No rate limiting** on create/analyze — a user could spam the LLM and burn the
+  Groq quota. *Prod:* per‑user rate limits + abuse protection.
+- **Email verification disabled** (no email provider wired up) — anyone can sign
+  up with any address. *Prod:* real verification + password reset via an email
+  provider (e.g. Resend).
+- **No automated tests** — given the time box I verified the full flow manually
+  (auth → create → background analysis → re‑analyze/retry → dashboard) rather
+  than writing a suite. *Prod:* unit + integration + e2e tests in CI.
+- **Dashboard stats computed in app code** — it loads the user's rows and
+  aggregates in JS. Fine at small scale; *prod:* SQL `GROUP BY` / `unnest` (or a
+  rollup table) and **pagination** on the history list (currently unpaginated).
+- **Migrations applied manually** (`db:push` / one `drizzle-kit migrate`).
+  *Prod:* a migration step in CI/CD.
+- **LLM error messages surfaced directly** to the client for easy debugging.
+  *Prod:* sanitize messages and log details server‑side. There's also no caching
+  or output guardrails — *prod:* cache identical inputs and add eval/guardrails.
+- **Monorepo kept** from the `create-turbo` starter even though it's a single
+  app — harmless, but unnecessary overhead for a project this size.
+
+What *is* production‑shaped already: real auth with DB‑backed sessions + JWT,
+end‑to‑end Zod validation, ownership checks on every query, a decoupled analysis
+function, indexed/denormalised columns for filtering, and clean loading/error/
+retry states.

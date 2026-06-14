@@ -47,9 +47,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     { className, variant, size, asChild = false, loading, children, disabled, ...props },
     ref,
   ) => {
-    // When asChild, Slot requires exactly one child element — so we must not
-    // inject the loader/extra nodes. The loading affordance only applies to
-    // real <button> elements.
+    // Slot requires exactly one child, so the loader only applies to <button>.
     if (asChild) {
       return (
         <Slot

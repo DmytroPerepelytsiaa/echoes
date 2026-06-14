@@ -9,7 +9,6 @@ import { runAnalysis } from "@/lib/analysis";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/decisions — list the current user's decisions, filtered & sorted. */
 export async function GET(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) return unauthorized();
@@ -35,13 +34,12 @@ export async function GET(request: NextRequest) {
     .select()
     .from(decisions)
     .where(and(...conditions))
-    // secondary sort keeps order stable when complexity is null/equal
+    // Secondary sort keeps order stable when complexity is null/equal.
     .orderBy(direction(sortColumn), desc(decisions.createdAt));
 
   return NextResponse.json({ decisions: rows });
 }
 
-/** POST /api/decisions — create a decision and kick off background analysis. */
 export async function POST(request: NextRequest) {
   const userId = await getUserId();
   if (!userId) return unauthorized();
@@ -73,8 +71,7 @@ export async function POST(request: NextRequest) {
 
   if (!created) return jsonError("Failed to create decision.", 500);
 
-  // Run the LLM analysis after the response is sent (same serverless
-  // invocation on Vercel) so the client gets an instant "pending" record.
+  // Analyse after the response is sent so the client gets an instant record.
   after(async () => {
     await runAnalysis(created.id);
   });

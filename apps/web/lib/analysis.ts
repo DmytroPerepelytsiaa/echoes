@@ -6,8 +6,7 @@ import { decisions } from "@/db/schema";
 import { analysisSchema } from "@/lib/validations";
 import { COGNITIVE_BIASES, DECISION_CATEGORIES } from "@/lib/taxonomy";
 
-// gpt-oss-120b is on Groq's free tier and supports strict json_schema
-// structured outputs, which `generateObject` relies on for reliable results.
+// Free-tier model that supports strict structured outputs.
 const DEFAULT_MODEL = "openai/gpt-oss-120b";
 
 const SYSTEM_PROMPT = `You are a rigorous decision-science analyst. A user describes a complex life or work decision they already made. Your job is to give an honest, insightful, and concrete assessment that helps them understand the quality of that decision.
@@ -35,11 +34,6 @@ function buildPrompt(input: {
   ].join("\n\n");
 }
 
-/**
- * Calls Groq to produce the structured analysis. Tries strict json_schema
- * structured output first; if the chosen model doesn't support it, falls back
- * to best-effort json_object mode (works across all Groq models).
- */
 async function generateAnalysis(
   modelId: string,
   row: { situation: string; decision: string; reasoning: string | null },
@@ -67,8 +61,7 @@ async function generateAnalysis(
     );
     if (!schemaUnsupported) throw err;
 
-    // Some Groq models don't support strict json_schema — retry in best-effort
-    // json_object mode, which works across all Groq models.
+    // Fall back to json_object mode for models without strict json_schema.
     const { output } = await generateText({
       ...base,
       providerOptions: { groq: { structuredOutputs: false } },
@@ -77,12 +70,7 @@ async function generateAnalysis(
   }
 }
 
-/**
- * Runs the LLM analysis for a single decision and persists the result.
- * Designed to be called in the background (via `after()`) or on demand
- * (re-analyze / retry). It owns the full status lifecycle and never throws —
- * failures are recorded on the row so the UI can show a retry affordance.
- */
+// Owns the full status lifecycle; never throws — failures are saved on the row.
 export async function runAnalysis(decisionId: string): Promise<void> {
   await db
     .update(decisions)

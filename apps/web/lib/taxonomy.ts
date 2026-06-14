@@ -1,9 +1,3 @@
-/**
- * Canonical taxonomies shared by the LLM prompt, the database, filters and the
- * dashboard. Keeping these fixed (with an "Other" escape hatch) makes the
- * model output predictable enough to aggregate and filter reliably.
- */
-
 export const DECISION_CATEGORIES = [
   "Career",
   "Finance",
@@ -18,10 +12,6 @@ export const DECISION_CATEGORIES = [
 
 export type DecisionCategory = (typeof DECISION_CATEGORIES)[number];
 
-/**
- * A curated set of well-known cognitive biases. The model is asked to pick the
- * closest match from this list so we can filter and chart by bias type.
- */
 export const COGNITIVE_BIASES = [
   "Confirmation Bias",
   "Sunk Cost Fallacy",
@@ -47,7 +37,6 @@ export type CognitiveBias = (typeof COGNITIVE_BIASES)[number];
 export const BIAS_SEVERITIES = ["low", "medium", "high"] as const;
 export type BiasSeverity = (typeof BIAS_SEVERITIES)[number];
 
-/** Short human-friendly blurbs surfaced as tooltips in the UI. */
 export const BIAS_DESCRIPTIONS: Partial<Record<CognitiveBias, string>> = {
   "Confirmation Bias": "Favoring information that confirms existing beliefs.",
   "Sunk Cost Fallacy": "Continuing because of already-invested resources.",

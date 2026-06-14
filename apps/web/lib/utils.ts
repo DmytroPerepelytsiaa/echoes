@@ -1,12 +1,10 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-/** Merge conditional class names, de-duplicating conflicting Tailwind utilities. */
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Format an ISO/Date value as a short, locale-aware date + time. */
 export function formatDateTime(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
   return new Intl.DateTimeFormat("en-US", {
@@ -18,7 +16,6 @@ export function formatDateTime(value: string | Date) {
   }).format(date);
 }
 
-/** Relative "time ago" string, e.g. "3h ago". */
 export function timeAgo(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
   const seconds = Math.round((Date.now() - date.getTime()) / 1000);

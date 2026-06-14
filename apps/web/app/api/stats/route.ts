@@ -8,7 +8,6 @@ import type { DecisionStatus } from "@/lib/validations";
 
 export const dynamic = "force-dynamic";
 
-/** GET /api/stats — aggregated metrics for the dashboard. */
 export async function GET() {
   const userId = await getUserId();
   if (!userId) return unauthorized();

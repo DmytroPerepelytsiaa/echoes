@@ -10,11 +10,7 @@ export const dynamic = "force-dynamic";
 
 type Params = { params: Promise<{ id: string }> };
 
-/**
- * POST /api/decisions/:id/analyze — (re)run the analysis. Used both for the
- * "re-analyze" action and for retrying a failed analysis. Sets the row back to
- * `pending` immediately and runs the LLM in the background.
- */
+// (Re)runs analysis — used for both re-analyze and retrying a failed run.
 export async function POST(_request: NextRequest, { params }: Params) {
   const userId = await getUserId();
   if (!userId) return unauthorized();

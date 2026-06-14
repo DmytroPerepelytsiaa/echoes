@@ -20,7 +20,6 @@ const SEVERITY_STYLES: Record<string, string> = {
 export function AnalysisView({ analysis }: { analysis: AnalysisResult }) {
   return (
     <div className="space-y-5">
-      {/* Summary + scores */}
       <Card>
         <CardContent className="space-y-5 pt-6">
           <div className="flex gap-3">
@@ -44,7 +43,6 @@ export function AnalysisView({ analysis }: { analysis: AnalysisResult }) {
         </CardContent>
       </Card>
 
-      {/* Cognitive biases */}
       <section>
         <SectionTitle icon={<Brain className="size-4" />}>
           Cognitive biases
@@ -80,7 +78,6 @@ export function AnalysisView({ analysis }: { analysis: AnalysisResult }) {
         )}
       </section>
 
-      {/* Missed alternatives */}
       <section>
         <SectionTitle icon={<Compass className="size-4" />}>
           Missed alternatives
@@ -108,7 +105,6 @@ export function AnalysisView({ analysis }: { analysis: AnalysisResult }) {
         )}
       </section>
 
-      {/* Strengths */}
       {analysis.strengths.length > 0 ? (
         <section>
           <SectionTitle icon={<ThumbsUp className="size-4" />}>

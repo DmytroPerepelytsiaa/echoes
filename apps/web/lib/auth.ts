@@ -19,15 +19,14 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    // No email provider in this demo — accounts are usable immediately.
+    // No email provider in this demo, so accounts are usable immediately.
     requireEmailVerification: false,
     minPasswordLength: 8,
   },
   session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days
-    updateAge: 60 * 60 * 24, // refresh once per day
+    expiresIn: 60 * 60 * 24 * 7,
+    updateAge: 60 * 60 * 24,
   },
-  // jwt() issues signed JWTs (JWKS stored in DB) via /api/auth/token.
   // nextCookies() must stay last so Set-Cookie works from server actions.
   plugins: [jwt(), nextCookies()],
 });

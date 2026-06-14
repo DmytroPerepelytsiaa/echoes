@@ -90,7 +90,6 @@ export function DecisionDetail({
         Back to decisions
       </Link>
 
-      {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-2">
@@ -146,7 +145,6 @@ export function DecisionDetail({
         </div>
       </div>
 
-      {/* Original input */}
       <Card>
         <CardContent className="space-y-4 pt-6">
           <Field label="Situation">{current.situation}</Field>
@@ -157,7 +155,6 @@ export function DecisionDetail({
         </CardContent>
       </Card>
 
-      {/* Analysis / status-dependent body */}
       {current.status === "completed" && current.analysis ? (
         <AnalysisView analysis={current.analysis} />
       ) : current.status === "failed" ? (

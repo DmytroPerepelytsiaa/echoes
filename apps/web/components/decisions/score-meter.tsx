@@ -1,6 +1,5 @@
 import { cn } from "@/lib/utils";
 
-/** A compact 0-10 score bar with a label. */
 export function ScoreMeter({
   label,
   value,

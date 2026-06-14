@@ -8,7 +8,7 @@ import {
 import type { Decision } from "@/db/schema";
 import type { DecisionInput, ListQuery } from "@/lib/validations";
 
-/** A decision as serialised over JSON (timestamps become ISO strings). */
+// A decision serialised over JSON (timestamps become ISO strings).
 export type DecisionDTO = Omit<Decision, "createdAt" | "updatedAt"> & {
   createdAt: string;
   updatedAt: string;
@@ -45,8 +45,6 @@ export const decisionKeys = {
   detail: (id: string) => ["decisions", "detail", id] as const,
   stats: ["stats"] as const,
 };
-
-/* ── Queries ─────────────────────────────────────────────────────────────── */
 
 const hasInflight = (items: DecisionDTO[]) =>
   items.some((d) => d.status === "pending" || d.status === "processing");
@@ -98,8 +96,6 @@ export function useStats() {
     queryFn: () => handle<StatsResponse>(fetch("/api/stats")),
   });
 }
-
-/* ── Mutations ───────────────────────────────────────────────────────────── */
 
 export function useCreateDecision() {
   const qc = useQueryClient();

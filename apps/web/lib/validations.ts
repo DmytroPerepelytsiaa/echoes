@@ -5,8 +5,6 @@ import {
   DECISION_CATEGORIES,
 } from "./taxonomy";
 
-/* ── Decision input (create form + POST /api/decisions) ──────────────────── */
-
 export const decisionInputSchema = z.object({
   situation: z
     .string()
@@ -28,8 +26,7 @@ export const decisionInputSchema = z.object({
 
 export type DecisionInput = z.infer<typeof decisionInputSchema>;
 
-/* ── LLM structured output (also stored in `decisions.analysis`) ─────────── */
-
+// Schema used for both the LLM structured output and the stored analysis.
 export const analysisSchema = z.object({
   category: z
     .enum(DECISION_CATEGORIES)
@@ -82,8 +79,6 @@ export const analysisSchema = z.object({
 
 export type AnalysisResult = z.infer<typeof analysisSchema>;
 
-/* ── History list query params (filters + sorting) ──────────────────────── */
-
 export const SORT_FIELDS = ["createdAt", "complexity"] as const;
 export const SORT_ORDERS = ["asc", "desc"] as const;
 export const DECISION_STATUSES = [
@@ -104,8 +99,6 @@ export const listQuerySchema = z.object({
 });
 
 export type ListQuery = z.infer<typeof listQuerySchema>;
-
-/* ── Auth forms ─────────────────────────────────────────────────────────── */
 
 export const signUpSchema = z.object({
   name: z.string().trim().min(2, "Enter your name.").max(80),
